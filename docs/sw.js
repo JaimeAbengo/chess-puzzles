@@ -1,4 +1,4 @@
-const VERSION = '2026.11.20-509';
+const VERSION = '2026.11.20-1613';
 const SHELL = 'shell-' + VERSION;
 const FILES = ['./', 'index.html', 'app.js', 'style.css', 'vendor/chessground.base.css', 'vendor/chessground.cburnett.css',
   'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];

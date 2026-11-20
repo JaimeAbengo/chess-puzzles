@@ -253,6 +253,11 @@ function yourTurnStatus() {
   else setStatus(game.color, 'Your turn', `Find the best move for ${side}`);
 }
 
+function hideSplash() {
+  const s = $('splash'); if (!s || s.classList.contains('out')) return;
+  s.classList.add('out'); setTimeout(() => s.remove(), 450);
+}
+
 async function startPuzzle(p, { replay = false } = {}) {
   const token = ++game.token;
   Object.assign(game, { p, chess: new Chess(p.fen), step: 0, failed: false, hinted: false, done: false, busy: true, recorded: replay });
@@ -264,6 +269,7 @@ async function startPuzzle(p, { replay = false } = {}) {
   $('meta').innerHTML = `Puzzle <a href="https://lichess.org/training/${p.id}" target="_blank" rel="noopener">#${p.id}</a> · ${ratingTxt}`;
   setStatus(game.color, 'Get ready…', `You play ${game.color === 'white' ? 'White' : 'Black'}`);
   setButtons();
+  hideSplash();
   await sleep(450);
   if (token !== game.token) return;
   const mv = applyUci(p.moves[0]);
@@ -282,7 +288,9 @@ function askPromotion(dest) {
     const box = $('promo'); box.innerHTML = '';
     for (const [r, name] of [['q', 'queen'], ['n', 'knight'], ['r', 'rook'], ['b', 'bishop']]) {
       const b = document.createElement('button');
-      b.innerHTML = `<piece class="${name} ${game.color}"></piece>`;
+      // pieces only get their images inside a .cg-wrap, so wrap each one
+      b.innerHTML = `<span class="cg-wrap promo-piece"><piece class="${name} ${game.color}"></piece></span>`;
+      b.setAttribute('aria-label', name[0].toUpperCase() + name.slice(1));
       b.onclick = e => { e.stopPropagation(); box.hidden = true; resolve(r); };
       box.appendChild(b);
     }
@@ -464,7 +472,7 @@ function boardMessage(html, btnText, fn) {
   const m = $('boardMsg');
   m.innerHTML = `<div>${html}</div>`;
   if (btnText) { const b = document.createElement('button'); b.className = 'btn primary small'; b.textContent = btnText; b.onclick = fn; m.appendChild(b); }
-  m.hidden = false; $('view-play').classList.add('msg');
+  m.hidden = false; $('view-play').classList.add('msg'); hideSplash();
   setStatus('', '', ''); $('statusTitle').textContent = ''; $('meta').textContent = '';
   game.done = true; $('hintBtn').hidden = $('solBtn').hidden = $('retryBtn').hidden = $('nextBtn').hidden = true;
 }
