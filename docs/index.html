@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; media-src 'self' data: blob:">
+<meta name="theme-color" content="#161512">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Puzzles">
+<title>Puzzles</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="vendor/chessground.base.css">
+<link rel="stylesheet" href="vendor/chessground.cburnett.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="rating-box" id="ratingBox">
+      <span class="label">Rating</span>
+      <span class="rating"><span id="rating">1500</span><span id="prov" class="prov">?</span></span>
+      <span id="delta" class="delta"></span>
+    </div>
+    <button id="themeBtn" class="chip"><span id="themeLabel">All puzzles</span><svg viewBox="0 0 24 24" width="14" height="14"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="streak-box"><span class="label">Streak</span><span class="streak"><span id="streak">0</span></span></div>
+  </header>
+
+  <!-- PLAY -->
+  <main id="view-play" class="view active">
+    <div id="reviewBanner" class="review-banner" hidden>
+      <span>Reviewing missed puzzles · <b id="reviewLeft">0</b> due</span>
+      <button id="reviewExit" class="link">Exit</button>
+    </div>
+    <div class="board-area">
+      <div class="board-wrap">
+        <div id="board" class="cg-wrap"></div>
+        <div id="promo" class="promo" hidden></div>
+        <div id="boardMsg" class="board-msg" hidden></div>
+      </div>
+    </div>
+    <div class="status" id="status">
+      <div class="status-icon" id="statusIcon"></div>
+      <div class="status-text">
+        <div id="statusTitle" class="status-title">Loading…</div>
+        <div id="statusSub" class="status-sub"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="hintBtn" class="btn">Hint</button>
+      <button id="solBtn" class="btn">Solution</button>
+      <button id="retryBtn" class="btn" hidden>Retry</button>
+      <button id="nextBtn" class="btn primary" hidden>Next puzzle</button>
+    </div>
+    <div class="meta" id="meta"></div>
+  </main>
+
+  <!-- STATS -->
+  <section id="view-stats" class="view scroll">
+    <h1>Your progress</h1>
+    <div class="cards" id="statCards"></div>
+    <h2>Rating</h2>
+    <div class="chart-box"><div class="chart-range" id="chartRange"></div><div id="chart"></div></div>
+    <h2>By theme <small>(10+ attempts)</small></h2>
+    <div id="themeStats" class="theme-stats"></div>
+    <h2>Recent</h2>
+    <div id="recent" class="recent"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view scroll">
+    <h1>Settings</h1>
+    <div class="group">
+      <div class="row"><span>Difficulty</span>
+        <select id="setDifficulty">
+          <option value="-300">Easiest</option><option value="-150">Easier</option><option value="0">Normal</option><option value="150">Harder</option><option value="300">Hardest</option>
+        </select></div>
+      <div class="row"><span>Next puzzle automatically after solving</span><input type="checkbox" id="setAutoNext" class="toggle"></div>
+      <div class="row"><span>Sound</span><input type="checkbox" id="setSound" class="toggle"></div>
+      <div class="row"><span>Coordinates</span><input type="checkbox" id="setCoords" class="toggle"></div>
+      <div class="row"><span>Board</span><div class="swatches" id="swatches"></div></div>
+    </div>
+
+    <h2>Offline</h2>
+    <div class="group">
+      <div class="row col">
+        <div class="row-head"><span>Puzzles on this phone</span><span id="dlCount" class="muted"></span></div>
+        <div class="progress"><div id="dlBar"></div></div>
+        <div class="muted small" id="dlInfo"></div>
+        <button id="dlBtn" class="btn wide">Download all puzzles</button>
+      </div>
+      <div class="row"><span>Offline mode<br><small class="muted">Never connects to the internet</small></span><input type="checkbox" id="setOffline" class="toggle"></div>
+    </div>
+
+    <h2>Your data</h2>
+    <div class="group">
+      <div class="row col">
+        <div class="muted small">Progress is saved on this phone. Back it up now and then: deleting the app from the home screen also deletes its data.</div>
+        <div class="btn-row">
+          <button id="exportBtn" class="btn">Export backup</button>
+          <button id="importBtn" class="btn">Import backup</button>
+          <input type="file" id="importFile" accept=".json,application/json" hidden>
+        </div>
+      </div>
+      <div class="row"><button id="resetBtn" class="btn danger wide">Reset all progress</button></div>
+    </div>
+    <p class="muted small center about">Puzzles from the <b>Lichess</b> open database (CC0). Board by Lichess Chessground.<br>App version <span id="ver"></span></p>
+  </section>
+
+  <nav class="tabs">
+    <button data-view="play" data-mode="rated" class="tab active"><svg viewBox="0 0 24 24"><path d="M9 4h6l-1 3h2l-2 5 2 6H8l2-6-2-5h2z" fill="currentColor"/><rect x="6" y="18" width="12" height="2.5" rx="1" fill="currentColor"/></svg><span>Puzzles</span></button>
+    <button data-view="play" data-mode="review" class="tab"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Review</span><i id="dueBadge" class="badge" hidden>0</i></button>
+    <button data-view="stats" class="tab"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l4-4 3 3 5-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Stats</span></button>
+    <button data-view="settings" class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span>Settings</span></button>
+  </nav>
+</div>
+
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-panel">
+    <div class="sheet-head"><b>Choose a theme</b><button class="link" data-close>Done</button></div>
+    <div id="themeList" class="theme-list"></div>
+  </div>
+</div>
+<div id="toast" class="toast" hidden></div>
+<div id="updateBar" class="update-bar" hidden>New version available <button id="updateBtn" class="btn primary small">Update</button></div>
+<script src="app.js"></script>
+</body>
+</html>
