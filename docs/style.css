@@ -135,7 +135,9 @@ select { font: inherit; color: var(--text); background: var(--bg3); border: 0; b
 #dlBar { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
 .muted { color: var(--muted); } .small { font-size: 13px; } .center { text-align: center; }
 .btn-row { display: flex; gap: 8px; }
-.about { margin-top: 26px; line-height: 1.6; }
+.about { margin-top: 4px; line-height: 1.6; }
+.credit { margin: 28px 0 0; font-size: 15px; color: var(--text); }
+.credit b { color: var(--accent2); }
 
 /* stats */
 .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -176,3 +178,4 @@ select { font: inherit; color: var(--text); background: var(--bg3); border: 0; b
 @media (min-width: 700px) { .actions, .status { max-width: 640px; margin-left: auto; margin-right: auto; width: calc(100% - 28px); } .actions { padding-left: 0; padding-right: 0; } }
 
 #view-play.msg .status, #view-play.msg .meta { visibility: hidden; }
+.scroll > * { flex-shrink: 0; }
