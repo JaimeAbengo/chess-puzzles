@@ -708,11 +708,16 @@ function showView(v) {
 }
 
 // ───────────────────────── service worker / updates ─────────────────────────
+// tell the service worker about Offline mode (via Cache Storage, which it can read even after restarting)
+async function syncOfflineFlag() {
+  try { const c = await caches.open('flags'); if (settings.offline) await c.put('offline', new Response('1')); else await c.delete('offline'); } catch { }
+}
+let swReg = null;
 async function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   try {
-    const reg = await navigator.serviceWorker.register('sw.js');
-    const prompt = w => { $('updateBar').hidden = false; $('updateBtn').onclick = () => w.postMessage('skipWaiting'); };
+    const reg = swReg = await navigator.serviceWorker.register('sw.js');
+    const prompt = w => { if (settings.offline) return; $('updateBar').hidden = false; $('updateBtn').onclick = () => w.postMessage('skipWaiting'); };
     if (reg.waiting && navigator.serviceWorker.controller) prompt(reg.waiting);
     reg.addEventListener('updatefound', () => {
       const w = reg.installing;
@@ -720,13 +725,14 @@ async function registerSW() {
     });
     let reloading = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloading) { reloading = true; location.reload(); } });
-    if (!settings.offline) setInterval(() => { if (!settings.offline) reg.update().catch(() => { }); }, 60 * 60e3);
+    setInterval(() => { if (!settings.offline) reg.update().catch(() => { }); }, 60 * 60e3);
   } catch { }
 }
 
 // ───────────────────────── boot ─────────────────────────
 async function boot() {
   settings = { ...DEFAULT_SETTINGS, ...(await db.get('settings')) };
+  syncOfflineFlag();
   player = { ...DEFAULT_PLAYER, ...(await db.get('player')) };
   cursors = (await db.get('cursors')) || {};
   attempts = (await db.all('attempts')).sort((a, b) => a.t - b.t);
@@ -757,9 +763,11 @@ async function boot() {
   $('setAutoNext').onchange = e => { settings.autoNext = e.target.checked; save.settings(); };
   $('setSound').onchange = e => { settings.sound = e.target.checked; save.settings(); if (settings.sound) { sound.unlock(); sound.move(); } };
   $('setCoords').onchange = e => { settings.coords = e.target.checked; save.settings(); applySettings(); };
-  $('setOffline').onchange = e => {
+  $('setOffline').onchange = async e => {
     settings.offline = e.target.checked; save.settings();
+    await syncOfflineFlag();
     if (settings.offline && dl) dl.stop = true;
+    if (settings.offline) $('updateBar').hidden = true; else if (swReg) swReg.update().catch(() => { });
     toast(settings.offline ? 'Offline mode on: the app will not connect to the internet' : 'Offline mode off');
     updateDownloadInfo();
   };

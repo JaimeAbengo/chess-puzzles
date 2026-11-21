@@ -3,8 +3,18 @@ const SHELL = 'shell-' + VERSION;
 const FILES = ['./', 'index.html', 'app.js', 'style.css', 'vendor/chessground.base.css', 'vendor/chessground.cburnett.css',
   'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 
+// Offline mode: the app writes a flag into Cache Storage; when it's set nothing goes to the network.
+const isOffline = async () => !!(await (await caches.open('flags')).match('offline'));
+const blocked = () => new Response('Offline mode is on', { status: 503, statusText: 'Offline mode' });
+
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(SHELL).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))));
+  e.waitUntil((async () => {
+    // iOS checks for a new version of this file by itself (the app can't stop that small check). If Offline mode is
+    // on and an older version is already installed, refuse to install: nothing else gets downloaded, no update prompt.
+    if (self.registration.active && await isOffline()) throw new Error('Offline mode is on: update not installed');
+    const c = await caches.open(SHELL);
+    await c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })));
+  })());
 });
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
@@ -14,13 +24,18 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('message', e => { if (e.data === 'skipWaiting') self.skipWaiting(); });
 
-// App files: always served from the phone (cache-first). Puzzle data is handled by the app itself.
+// App files: always served from the phone (cache-first). Puzzle data is handled by the app itself,
+// except in Offline mode, where anything not already on the phone is refused.
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.includes('/data/')) return;
+  const data = url.pathname.includes('/data/');
   e.respondWith((async () => {
+    const offline = await isOffline();
+    if (e.request.method !== 'GET' || url.origin !== location.origin) return offline ? blocked() : fetch(e.request);
+    if (data) return offline ? ((await caches.match(e.request)) || blocked()) : fetch(e.request);
     const cache = await caches.open(SHELL);
-    if (e.request.mode === 'navigate') return (await cache.match('index.html')) || fetch(e.request);
-    return (await cache.match(e.request, { ignoreSearch: true })) || fetch(e.request);
+    const hit = e.request.mode === 'navigate' ? await cache.match('index.html') : await cache.match(e.request, { ignoreSearch: true });
+    if (hit) return hit;
+    return offline ? blocked() : fetch(e.request);
   })());
 });
